@@ -8,26 +8,23 @@ pipeline {
       }
     }
 
-    stage('React: Install dependencies') {
+    stage('Install React dependencies') {
       steps {
         dir('frontend') {
-          timeout(time: 10, unit: 'MINUTES') {
-            sh 'npm install --no-audit --no-fund --prefer-offline --no-optional'
-          }
+          sh 'npm install'
         }
       }
     }
 
-    stage('React: Build') {
+    stage('Build React App') {
       steps {
         dir('frontend') {
-          // Set CI=false to reduce memory usage during build
-          sh 'CI=false npm run build'
+          sh 'npm run build'
         }
       }
     }
 
-    stage('PHP: Syntax check') {
+    stage('Check PHP syntax') {
       steps {
         dir('backend') {
           sh 'php -l index.php'
@@ -38,10 +35,10 @@ pipeline {
 
   post {
     success {
-      echo '✅ CI pipeline passed for both frontend and backend'
+      echo '✅ Build successful!'
     }
     failure {
-      echo '❌ CI pipeline failed'
+      echo '❌ Build failed.'
     }
   }
 }
