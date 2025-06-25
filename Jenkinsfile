@@ -12,6 +12,7 @@ pipeline {
       steps {
         dir('frontend') {
           catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            deleteDir()
             sh 'npm install'
           }
         }
