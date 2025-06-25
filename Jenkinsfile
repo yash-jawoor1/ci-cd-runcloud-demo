@@ -11,7 +11,9 @@ pipeline {
     stage('Install React dependencies') {
       steps {
         dir('frontend') {
-          sh 'npm install'
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            sh 'npm install'
+          }
         }
       }
     }
@@ -19,7 +21,9 @@ pipeline {
     stage('Build React App') {
       steps {
         dir('frontend') {
-          sh 'npm run build'
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            sh 'npm run build'
+          }
         }
       }
     }
@@ -27,7 +31,9 @@ pipeline {
     stage('Check PHP syntax') {
       steps {
         dir('backend') {
-          sh 'php -l index.php'
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            sh 'php -l index.php'
+          }
         }
       }
     }
