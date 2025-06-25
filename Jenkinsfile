@@ -11,7 +11,9 @@ pipeline {
     stage('React: Install dependencies') {
       steps {
         dir('frontend') {
-          sh 'npm install'
+          timeout(time: 10, unit: 'MINUTES') {
+            sh 'npm install --no-audit --no-fund --prefer-offline --no-optional'
+          }
         }
       }
     }
@@ -19,7 +21,8 @@ pipeline {
     stage('React: Build') {
       steps {
         dir('frontend') {
-          sh 'npm run build'
+          // Set CI=false to reduce memory usage during build
+          sh 'CI=false npm run build'
         }
       }
     }
