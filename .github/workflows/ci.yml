@@ -34,7 +34,7 @@ jobs:
           npm install -g sonar-scanner
           sonar-scanner \
             -Dsonar.projectKey=yash-jawoor1_ci-cd-runcloud-demo \
-            -Dsonar.organization=yashrajsingh \
+            -Dsonar.organization=yash-jawoor1 \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=${SONAR_TOKEN} \
             -Dsonar.sources=src \
