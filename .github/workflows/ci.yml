@@ -1,4 +1,4 @@
-name: Starter CI Pipeline
+name: Smart CI Pipeline
 
 on:
   push:
@@ -7,8 +7,16 @@ on:
     branches: [ master ]
 
 jobs:
-  build-and-test:
+
+  # ----------------------------
+  # React Frontend CI Job
+  # ----------------------------
+  react-frontend:
+    name: React Frontend Build
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    paths:
+      - 'frontend/**'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -18,9 +26,50 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install & Build React
-        working-directory: ./frontend
+      - name: Install & Build React App
+        working-directory: frontend
         run: |
           npm install
           npm run build
+
+  # ----------------------------
+  # PHP Backend CI Job
+  # ----------------------------
+  php-backend:
+    name: PHP Backend Lint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    paths:
+      - 'backend/**'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Lint PHP Files
+        run: find backend -name "*.php" -exec php -l {} \;
+
+  # ----------------------------
+  # HTML Validation CI Job
+  # ----------------------------
+  html-check:
+    name: Static HTML Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    paths:
+      - 'html/**'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install htmlhint
+        run: |
+          npm install -g htmlhint
+
+      - name: Run HTML Linter
+        run: htmlhint "html/**/*.html" || true
 
