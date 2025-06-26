@@ -12,11 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       - name: Check if frontend changed
         id: changed
         run: |
-          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/' || true)" >> $GITHUB_OUTPUT
+          git_diff=$(git diff --name-only HEAD^ HEAD | grep '^frontend/' || true)
+          echo "changed=$git_diff" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         if: steps.changed.outputs.changed != ''
@@ -36,11 +39,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       - name: Check if backend changed
         id: changed
         run: |
-          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/' || true)" >> $GITHUB_OUTPUT
+          git_diff=$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)
+          echo "changed=$git_diff" >> $GITHUB_OUTPUT
 
       - name: Setup PHP
         if: steps.changed.outputs.changed != ''
@@ -57,11 +63,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       - name: Check if html changed
         id: changed
         run: |
-          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^html/' || true)" >> $GITHUB_OUTPUT
+          git_diff=$(git diff --name-only HEAD^ HEAD | grep '^html/' || true)
+          echo "changed=$git_diff" >> $GITHUB_OUTPUT
 
       - name: Install htmlhint
         if: steps.changed.outputs.changed != ''
