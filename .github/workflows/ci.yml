@@ -1,4 +1,4 @@
-name: Smart CI Pipeline
+name: Smart CI Pipeline with SonarQube
 
 on:
   push:
@@ -8,61 +8,114 @@ on:
 
 jobs:
   react-frontend:
-    name: React Frontend Build & Sonar Scan
+    name: React Frontend Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check if frontend changed
+        id: changed
+        run: |
+          git_diff=$(git diff --name-only HEAD^ HEAD | grep '^frontend/' || true)
+          echo "changed=$git_diff" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
+        if: steps.changed.outputs.changed != ''
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm install
-
       - name: Build React App
+        if: steps.changed.outputs.changed != ''
         working-directory: frontend
-        run: npm run build
-
-      - name: Run SonarCloud Scan
-        working-directory: frontend
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          npm install -g sonar-scanner
-          sonar-scanner \
-            -Dsonar.projectKey=yash-jawoor1_ci-cd-runcloud-demo \
-            -Dsonar.organization=yash-jawoor1 \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${SONAR_TOKEN} \
-            -Dsonar.sources=src \
-            -Dsonar.exclusions=**/node_modules/**,**/*.test.js
+          npm install
+          npm run build
 
   php-backend:
     name: PHP Backend Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check if backend changed
+        id: changed
+        run: |
+          git_diff=$(git diff --name-only HEAD^ HEAD | grep '^backend/' || true)
+          echo "changed=$git_diff" >> $GITHUB_OUTPUT
+
+      - name: Setup PHP
+        if: steps.changed.outputs.changed != ''
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Lint PHP
+        if: steps.changed.outputs.changed != ''
+        run: find backend -name "*.php" -exec php -l {} \;
+
+  html-check:
+    name: HTML Validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check if HTML changed
+        id: changed
+        run: |
+          git_diff=$(git diff --name-only HEAD^ HEAD | grep '^html/' || true)
+          echo "changed=$git_diff" >> $GITHUB_OUTPUT
+
+      - name: Install htmlhint
+        if: steps.changed.outputs.changed != ''
+        run: npm install -g htmlhint
+
+      - name: Run htmlhint
+        if: steps.changed.outputs.changed != ''
+        run: htmlhint "html/**/*.html" || true
+
+  sonar-analysis:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    needs: [react-frontend, php-backend, html-check]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
 
-      - name: Lint PHP files
-        run: find backend -name "*.php" -exec php -l {} \;
+      - name: Install dependencies for frontend
+        working-directory: frontend
+        run: npm install
 
-  html-validator:
-    name: HTML Validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
-      - name: Install HTMLHint
-        run: npm install -g htmlhint
+      - name: Install SonarScanner
+        run: npm install -g sonar-scanner
 
-      - name: Validate HTML files
-        run: htmlhint "html/**/*.html" || true
+      - name: Run SonarQube Scanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          sonar-scanner \
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.host.url=$SONAR_HOST_URL
 
