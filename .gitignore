@@ -1,2 +1,18 @@
-sonarqube-*/**/*.jar
-sonarqube-*/
+# .gitignore
+
+# Node/React
+node_modules/
+build/
+
+# PHP Composer
+vendor/
+
+# Sonar
+.sonarqube/
+.sonar/
+
+# OS/IDE
+.DS_Store
+*.log
+*.zip
+
