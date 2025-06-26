@@ -6,49 +6,29 @@ on:
   pull_request:
     branches: [ master ]
 
-env:
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
 jobs:
   react-frontend:
-    name: React Frontend Build & Test
+    name: React Frontend Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Detect frontend changes
-        id: changed
-        run: |
-          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/' || true)" >> $GITHUB_OUTPUT
-
       - name: Setup Node.js
-        if: steps.changed.outputs.changed != ''
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        if: steps.changed.outputs.changed != ''
+      - name: Install Dependencies
         working-directory: frontend
         run: npm install
 
-      - name: Run Unit Tests
-        if: steps.changed.outputs.changed != ''
-        working-directory: frontend
-        run: npm test -- --watchAll=false
-
       - name: Build React App
-        if: steps.changed.outputs.changed != ''
         working-directory: frontend
         run: npm run build
 
-      - name: SonarCloud Scan (Frontend)
-        if: steps.changed.outputs.changed != ''
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          projectBaseDir: frontend
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Run Unit Tests
+        working-directory: frontend
+        run: npm test -- --watchAll=false
 
   php-backend:
     name: PHP Backend Lint
@@ -56,53 +36,43 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Detect backend changes
-        id: changed
-        run: |
-          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/' || true)" >> $GITHUB_OUTPUT
-
       - name: Setup PHP
-        if: steps.changed.outputs.changed != ''
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
 
-      - name: Lint PHP
-        if: steps.changed.outputs.changed != ''
+      - name: Lint PHP Files
         run: find backend -name "*.php" -exec php -l {} \;
 
-      - name: SonarCloud Scan (Backend)
-        if: steps.changed.outputs.changed != ''
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          projectBaseDir: backend
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
   html-check:
-    name: HTML Validation
+    name: HTML Validator
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Detect HTML changes
-        id: changed
-        run: |
-          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^html/' || true)" >> $GITHUB_OUTPUT
-
       - name: Install htmlhint
-        if: steps.changed.outputs.changed != ''
         run: npm install -g htmlhint
 
-      - name: Run htmlhint
-        if: steps.changed.outputs.changed != ''
+      - name: Run htmlhint on HTML files
         run: htmlhint "html/**/*.html" || true
 
-      - name: SonarCloud Scan (HTML)
-        if: steps.changed.outputs.changed != ''
-        uses: SonarSource/sonarcloud-github-action@v2
+  sonar-scan:
+    name: Code Quality - SonarCloud
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
         with:
-          projectBaseDir: html
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install SonarScanner
+        run: npm install -g sonarqube-scanner
+
+      - name: Run Sonar Scanner
+        run: sonar-scanner
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
