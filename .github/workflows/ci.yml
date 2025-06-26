@@ -7,69 +7,67 @@ on:
     branches: [ master ]
 
 jobs:
-
-  # ----------------------------
-  # React Frontend CI Job
-  # ----------------------------
   react-frontend:
     name: React Frontend Build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    paths:
-      - 'frontend/**'
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+
+      - name: Check if frontend changed
+        id: changed
+        run: |
+          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/' || true)" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
+        if: steps.changed.outputs.changed != ''
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install & Build React App
+      - name: Build React App
+        if: steps.changed.outputs.changed != ''
         working-directory: frontend
         run: |
           npm install
           npm run build
 
-  # ----------------------------
-  # PHP Backend CI Job
-  # ----------------------------
   php-backend:
     name: PHP Backend Lint
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    paths:
-      - 'backend/**'
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+
+      - name: Check if backend changed
+        id: changed
+        run: |
+          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/' || true)" >> $GITHUB_OUTPUT
 
       - name: Setup PHP
+        if: steps.changed.outputs.changed != ''
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
 
-      - name: Lint PHP Files
+      - name: Lint PHP
+        if: steps.changed.outputs.changed != ''
         run: find backend -name "*.php" -exec php -l {} \;
 
-  # ----------------------------
-  # HTML Validation CI Job
-  # ----------------------------
   html-check:
-    name: Static HTML Check
+    name: HTML Validator
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    paths:
-      - 'html/**'
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+
+      - name: Check if html changed
+        id: changed
+        run: |
+          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^html/' || true)" >> $GITHUB_OUTPUT
 
       - name: Install htmlhint
-        run: |
-          npm install -g htmlhint
+        if: steps.changed.outputs.changed != ''
+        run: npm install -g htmlhint
 
-      - name: Run HTML Linter
+      - name: Run htmlhint
+        if: steps.changed.outputs.changed != ''
         run: htmlhint "html/**/*.html" || true
 
