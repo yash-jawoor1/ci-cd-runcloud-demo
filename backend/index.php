@@ -1,1 +1,8 @@
-<?php echo 'Hello from PHP backend yash '; ?>
+<?php
+
+function greetUser($name) {
+    return "Hello, $name from PHP backend!";
+}
+
+echo greetUser("Yash");
+
