@@ -3,7 +3,7 @@
 
 session_start();
 
-// Database connection (no error handling, hardcoded credentials)
+// Database connection (no error handling, hardcoded credentials    )
 $conn = new mysqli("localhost", "root", "", "testdb");
 if ($conn->connect_error) {
     die("DB Error");
